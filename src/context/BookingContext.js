@@ -1,19 +1,22 @@
-import React, { createContext, useState, useContext } from 'react';
+// src/context/BookingContext.js
+import React, { createContext, useState } from 'react';
 
-const BookingContext = createContext();
+export const BookingContext = createContext();
 
 export const BookingProvider = ({ children }) => {
-  const [bookedTickets, setBookedTickets] = useState([]);
+  const [bookings, setBookings] = useState([]);
 
-  const addTicket = (ticket) => {
-    setBookedTickets((prev) => [...prev, ticket]);
+  const addBooking = (newBooking) => {
+    setBookings(prev => [...prev, {
+      ...newBooking,
+      id: Date.now(), // ID unique
+      bookingDate: new Date().toISOString() // Date de réservation
+    }]);
   };
 
   return (
-    <BookingContext.Provider value={{ bookedTickets, addTicket }}>
+    <BookingContext.Provider value={{ bookings, addBooking }}>
       {children}
     </BookingContext.Provider>
   );
 };
-
-export const useBooking = () => useContext(BookingContext);

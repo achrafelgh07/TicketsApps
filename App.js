@@ -14,6 +14,7 @@ const Stack = createStackNavigator();
 export default function App() {
   return (
     <AuthProvider>
+      <BookingProvider>
       <NavigationContainer>
         <Stack.Navigator initialRouteName="Login">
           <Stack.Screen name="Login" component={LoginScreen} />
@@ -22,6 +23,7 @@ export default function App() {
           <Stack.Screen name="Tickets" component={TicketBookingScreen} />
         </Stack.Navigator>
       </NavigationContainer>
+      </BookingProvider>
     </AuthProvider>
   );
 }
