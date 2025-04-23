@@ -7,12 +7,14 @@ import {
   Image, 
   StyleSheet, 
   SafeAreaView,
-  RefreshControl 
+  RefreshControl,
+  ActivityIndicator
 } from 'react-native';
 import { SearchBar } from 'react-native-elements';
 import MatchCard from '../../components/MatchCard';
-import { mockApi } from '../../services/mockApi';
+import { getMatches } from '../../services/api';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const MatchListScreen = ({ navigation }) => {
   const [matches, setMatches] = useState([]);
@@ -20,18 +22,37 @@ const MatchListScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
-  const fetchMatches = () => {
-    setLoading(true);
-    mockApi.getMatches()
-      .then(data => {
-        setMatches(data);
-        setFilteredMatches(data);
-      })
-      .finally(() => {
-        setLoading(false);
-        setRefreshing(false);
-      });
+  const filterByCategory = async (category) => {
+    try {
+      setLoading(true);
+      setSelectedCategory(category);
+      const response = await fetch(`http://10.0.2.2:5000/api/matches/with-tickets/${category}`);
+      const data = await response.json();
+      setMatches(data);
+      setFilteredMatches(data);
+    } catch (error) {
+      console.error('Erreur de filtrage :', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+
+  const fetchMatches = async () => {
+    try {
+      setLoading(true);
+      const data = await getMatches();
+      console.log('Données reçues du backend :', data);
+      setMatches(data);
+      setFilteredMatches(data);
+    } catch (error) {
+      console.error('Fetch error:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   };
 
   const handleRefresh = () => {
@@ -45,8 +66,9 @@ const MatchListScreen = ({ navigation }) => {
       setFilteredMatches(matches);
     } else {
       const filtered = matches.filter(match => 
-        match.teams.toLowerCase().includes(query.toLowerCase()) ||
-        match.location.toLowerCase().includes(query.toLowerCase())
+        match.team1.toLowerCase().includes(query.toLowerCase()) ||
+        match.team2.toLowerCase().includes(query.toLowerCase()) ||
+        match.venue.toLowerCase().includes(query.toLowerCase())
       );
       setFilteredMatches(filtered);
     }
@@ -56,11 +78,18 @@ const MatchListScreen = ({ navigation }) => {
     fetchMatches();
   }, []);
 
-  if (loading && !refreshing) return <Text style={styles.loadingText}>Chargement...</Text>;
+  if (loading && !refreshing) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#007AFF" />
+        <Text style={styles.loadingText}>Chargement des matches...</Text>
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header avec barre de recherche et profil */}
+      {/* Header avec barre de recherche et bouton profil */}
       <View style={styles.header}>
         <SearchBar
           placeholder="Rechercher matches..."
@@ -82,17 +111,47 @@ const MatchListScreen = ({ navigation }) => {
           />
         </TouchableOpacity>
       </View>
+      {/*filter*/}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginVertical: 10 }}>
+      <TouchableOpacity 
+    onPress={() => {
+      setSelectedCategory(null);
+      fetchMatches();
+    }}
+    style={[styles.filterButton, !selectedCategory && styles.selectedFilter]}
+  >
+    <Text style={styles.filterText}>Tous</Text>
+  </TouchableOpacity>
+  <TouchableOpacity 
+    onPress={() => filterByCategory('VIP')}
+    style={[styles.filterButton, selectedCategory === 'VIP' && styles.selectedFilter]}
+  >
+    <Text style={styles.filterText}>VIP</Text>
+  </TouchableOpacity>
+  <TouchableOpacity 
+    onPress={() => filterByCategory('normal')}
+    style={[styles.filterButton, selectedCategory === 'normal' && styles.selectedFilter]}
+  >
+    <Text style={styles.filterText}>Normale</Text>
+  </TouchableOpacity>
+ 
+</View>
 
-      {/* Contenu principal */}
+  
+      {/* Liste des matches */}
       <FlatList
         data={filteredMatches}
         renderItem={({ item }) => (
           <MatchCard 
-            match={item} 
-            onPress={() => navigation.navigate('MatchDetail', { match: item })}
+            match={item}
+            onPress={() => navigation.navigate('MatchDetail', { 
+              matchId: item._id, 
+              match: item  // on passe tout l'objet
+            })}
+            
           />
         )}
-        keyExtractor={item => item.id.toString()}
+        keyExtractor={item => item._id.toString()}
         contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl
@@ -108,7 +167,7 @@ const MatchListScreen = ({ navigation }) => {
           </Text>
         }
       />
-
+  
       {/* Barre de navigation en bas */}
       <View style={styles.bottomNav}>
         <TouchableOpacity 
@@ -129,7 +188,10 @@ const MatchListScreen = ({ navigation }) => {
       </View>
     </SafeAreaView>
   );
+  
 };
+
+
 
 const styles = StyleSheet.create({
   container: {
@@ -208,6 +270,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#888',
   },
+  filterButton: {
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#ddd',
+  },
+  selectedFilter: {
+    backgroundColor: '#007AFF',
+  },
+  filterText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  
 });
 
 export default MatchListScreen;
