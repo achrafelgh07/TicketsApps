@@ -83,6 +83,15 @@ export const addMatchApi = async (matchData) => {
     throw error;
   }
 };
+export const getMatch = async () => {
+  try {
+    const response = await api.get('/matches/with-tickets'); // <- mise à jour ici
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching matches:', error);
+    throw error;
+  }
+};
 
 
 

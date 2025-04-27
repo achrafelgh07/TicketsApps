@@ -1,5 +1,6 @@
 const Match = require('../models/Match');
 const Ticket = require('../models/Ticket');
+const Reservation = require('../models/Reservation');
 const mongoose = require('mongoose');
 
 exports.createMatch = async (req, res) => {
@@ -57,6 +58,39 @@ exports.getMatchesByTicketCategory = async (req, res) => {
     res.json(uniqueMatches);
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+};
+
+
+exports.getMatchesWithTickets = async (req, res) => {
+  try {
+    const matches = await Match.find();
+
+    const matchesWithTickets = await Promise.all(
+      matches.map(async (match) => {
+        const tickets = await Ticket.find({ id_match: match._id });
+
+        const ticketsWithReservations = await Promise.all(
+          tickets.map(async (ticket) => {
+            const reservations = await Reservation.find({ id_ticket: ticket._id });
+            return {
+              ...ticket.toObject(),
+              reservations, // tu peux filtrer ou résumer si tu veux
+            };
+          })
+        );
+
+        return {
+          ...match.toObject(),
+          tickets: ticketsWithReservations,
+        };
+      })
+    );
+
+    res.json(matchesWithTickets);
+  } catch (error) {
+    console.error('Erreur lors du chargement des matchs avec tickets:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
   }
 };
 

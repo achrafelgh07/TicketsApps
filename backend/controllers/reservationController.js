@@ -64,3 +64,43 @@ exports.getReservationById = async (req, res) => {
     res.status(500).json({ message: 'Erreur lors de la récupération de la réservation', error: error.message });
   }
 };
+
+exports.updateReservation = async (req, res) => {
+  try {
+      const { id } = req.params;
+      const { statut } = req.body;
+
+      // Vérifier si la réservation existe
+      const reservation = await Reservation.findById(id);
+      if (!reservation) {
+          return res.status(404).json({ message: 'Réservation non trouvée' });
+      }
+
+      // Mettre à jour la réservation
+      const updatedReservation = await Reservation.findByIdAndUpdate(
+          id,
+          { statut },
+          { new: true, runValidators: true }
+      );
+
+      // Si le statut est annulé, augmenter la disponibilité du ticket
+      if (statut === 'annulé') {
+          await Ticket.findByIdAndUpdate(
+              reservation.id_ticket,
+              { $inc: { disponibilité: 1 } }
+          );
+      }
+
+      res.status(200).json({
+          status: 'success',
+          data: {
+              reservation: updatedReservation
+          }
+      });
+  } catch (err) {
+      res.status(400).json({
+          status: 'fail',
+          message: err.message
+      });
+  }
+};

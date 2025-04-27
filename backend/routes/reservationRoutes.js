@@ -7,5 +7,6 @@ const reservationController = require('../controllers/reservationController');
 router.post('/', reservationController.createReservation); // Créer une réservation
 router.get('/', reservationController.getAllReservations); // Récupérer toutes les réservations
 router.get('/:id', reservationController.getReservationById); // Récupérer une réservation par ID
+router.patch('/:id', reservationController.updateReservation);
 
 module.exports = router;

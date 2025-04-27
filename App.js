@@ -12,6 +12,7 @@ import TicketBookingScreen from './src/screens/tickets/TicketBookingScreen';
 import AddMatchScreen from './src/screens/club/AddMatchScreen';
 import ClubHomeScreen from './src/screens/club/ClubHomeScreen';
 import { BookingProvider } from './src/context/BookingContext';
+import TicketDetailsScreen from './src/screens/club/TicketDetailsScreen';
 
 const Stack = createStackNavigator();
 
@@ -21,7 +22,7 @@ export default function App() {
       <BookingProvider>
       <MatchProvider>
       <NavigationContainer>
-        <Stack.Navigator initialRouteName="ClubHome">
+        <Stack.Navigator initialRouteName="Register">
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Register" component={RegisterScreen} />
           <Stack.Screen name="MatchList" component={MatchListScreen} />
@@ -29,6 +30,7 @@ export default function App() {
           <Stack.Screen name="Tickets" component={TicketBookingScreen} />
           <Stack.Screen name="AddMatch" component={AddMatchScreen} />
           <Stack.Screen name="ClubHome" component={ClubHomeScreen} />
+          <Stack.Screen name="TicketDetails" component={TicketDetailsScreen} options={{ title: 'Détails Tickets' }}/>
         </Stack.Navigator>
       </NavigationContainer>
       </MatchProvider>

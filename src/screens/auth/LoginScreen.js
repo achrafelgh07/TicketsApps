@@ -3,11 +3,13 @@ import React, { useState, useContext } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, ActivityIndicator } from 'react-native';
 import { AuthContext } from '../../context/AuthContext';
 
+
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('test@example.com'); // Valeur par défaut pour tester
   const [password, setPassword] = useState('123456'); // Valeur par défaut pour tester
   const [loading, setLoading] = useState(false); // Ajouté
   const { login } = useContext(AuthContext);
+  
 
   const handleLogin = async () => {
     setLoading(true);

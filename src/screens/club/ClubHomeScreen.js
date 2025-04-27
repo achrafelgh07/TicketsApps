@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -15,72 +15,94 @@ import { MatchContext } from '../../context/MatchContext';
 
 const ClubHomeScreen = () => {
   const navigation = useNavigation();
-  const { matches } = useContext(MatchContext);
   const [filter, setFilter] = useState('Tous');
+  const { matches, fetchMatches } = useContext(MatchContext);
+
+  const navigateToTicketDetails = (match) => {
+    navigation.navigate('TicketDetails', { 
+      matchId: match._id,
+      matchName: `${match.équipe_1} vs ${match.équipe_2}`,
+      tickets: match.tickets 
+    });
+  };
+
+useEffect(() => {
+  const loadMatches = async () => {
+    await fetchMatches();
+  };
+  loadMatches();
+}, []);
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Tableau de bord Club</Text>
+        <Text style={styles.revenue}>Active Matches</Text>
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filtersContainer}>
-        {['Tous', 'Aujourd\'hui', 'Cette semaine'].map((f) => (
-          <TouchableOpacity
-            key={f}
-            style={[styles.filterButton, filter === f && styles.filterButtonActive]}
-            onPress={() => setFilter(f)}
-          >
-            <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>{f}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      
 
       <FlatList
+      
         data={matches}
         keyExtractor={(item) => item._id.toString()}
         renderItem={({ item }) => {
           const tickets = item.tickets || [];
 
-          const totalTickets = tickets.length;
-          const soldTickets = tickets.filter(t => !t.disponibilité).length;
+          const totalTickets = tickets.reduce((total, ticket) => total + (ticket.disponibilité || 0), 0);
+          const soldTickets = tickets.reduce((sum, t) => {
+            const paid = t.reservations?.filter(r => r.statut === "payé").length || 0;
+            return sum + paid;
+          }, 0);
           const remainingTickets = totalTickets - soldTickets;
 
-          const averagePrice =
-            totalTickets > 0
-              ? (
-                  tickets.reduce((sum, t) => sum + parseFloat(t.prix || 0), 0) /
-                  totalTickets
-                ).toFixed(2)
-              : 0;
+          const reservedTickets = tickets.reduce((sum, t) => {
+            const reserved = t.reservations?.filter(r => r.statut === "réservé").length || 0;
+            return sum + reserved;
+          }, 0);
 
-          const revenue = soldTickets * averagePrice;
+          const totalRevenue = tickets.reduce((sum, ticket) => {
+            const paidForThisTicket = ticket.reservations?.filter(r => r.statut === "payé").length || 0;
+            return sum + (paidForThisTicket * parseFloat(ticket.prix || 0));
+          }, 0);
+          
+          // Prix moyen (alternative à votre version)
+          const averagePrice = soldTickets > 0 
+            ? (totalRevenue / soldTickets).toFixed(2)
+            : 0;
+          
+          // Revenue total (plus précis que soldTickets * averagePrice)
+          const revenue = totalRevenue;
           const progress = totalTickets > 0 ? (soldTickets / totalTickets) * 100 : 0;
 
           return (
-            <View style={styles.matchCard}>
+            <TouchableOpacity 
+              style={styles.matchCard}
+              onPress={() => navigateToTicketDetails(item)}
+              activeOpacity={0.8} // Optionnel : pour l'effet de toucher
+            >
               <View style={styles.matchHeader}>
                 <Text style={styles.matchTitle}>{item.équipe_1} vs {item.équipe_2}</Text>
-                <Text style={styles.matchDate}>{item.date} à {item.heure}</Text>
+                <Text style={styles.matchDate}>{item.date}</Text>
               </View>
-
+          
               <Text style={styles.matchLieu}>📍 {item.lieu}</Text>
-
+          
               <View style={styles.statsRow}>
                 <Text style={styles.label}>🎟️ Tickets vendus: {soldTickets}/{totalTickets}</Text>
                 <View style={styles.progressBackground}>
                   <View style={[styles.progressFill, { width: `${progress}%` }]} />
                 </View>
               </View>
-
-              <Text style={styles.revenue}>💰 Revenu généré : {revenue} €</Text>
-
+          
+              <Text style={styles.revenue}>💰 Revenu généré : {totalRevenue} ryal</Text>
+          
               <View style={styles.statDetails}>
                 <Text style={styles.detail}>Total : {totalTickets}</Text>
                 <Text style={styles.detail}>Restants : {remainingTickets}</Text>
-                <Text style={styles.detail}>Prix moyen : {averagePrice} €</Text>
+                <Text style={styles.detail}>Réservés : {reservedTickets}</Text>
               </View>
-            </View>
+            </TouchableOpacity>
           );
         }}
         ListEmptyComponent={
@@ -125,9 +147,9 @@ const styles = StyleSheet.create({
   filterButton: {
     backgroundColor: '#eee',
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 1,
     borderRadius: 20,
-    marginRight: 10,
+    marginRight: 12,
   },
   filterButtonActive: {
     backgroundColor: '#6C63FF',

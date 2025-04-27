@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   View,
   Text,
@@ -12,12 +12,25 @@ import {
   Animated
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AuthContext } from '../../context/AuthContext';
 
 const RegisterScreen = ({ navigation }) => {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const scale = useState(new Animated.Value(1))[0];
+
+  const { register } = useContext(AuthContext);
+
+  const handleRegister = async () => {
+    const result = await register(fullName, email, password);
+    
+      alert('Inscription reessi' )
+    
+      navigation.navigate('Login'); // Ou autre écran après inscription
+    
+  };
 
   const onPressIn = () => {
     Animated.spring(scale, {
@@ -34,11 +47,6 @@ const RegisterScreen = ({ navigation }) => {
     }).start();
   };
 
-  const handleRegister = () => {
-    // Ajoute ici la logique d'inscription avec ton backend
-    console.log('Inscription:', fullName, email, password);
-  };
-
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: '#fff' }}
@@ -46,7 +54,7 @@ const RegisterScreen = ({ navigation }) => {
     >
       <ScrollView contentContainerStyle={styles.container}>
         <Image
-          source={require('../../assets/2.png')} // Mets ton logo ici
+          source={require('../../assets/2.png')}
           style={styles.logo}
         />
         <Text style={styles.title}>Créer un compte</Text>

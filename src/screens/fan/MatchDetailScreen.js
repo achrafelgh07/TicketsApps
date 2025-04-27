@@ -50,7 +50,7 @@ const MatchDetailScreen = ({ route, navigation }) => {
     setBookingLoading(true);
     try {
       await createReservation({
-        userId: user?.id, // ou null si non connecté
+        userId: user?._id, // ou null si non connecté
         ticketId: ticket._id,
         statut: 'réservé',
       });

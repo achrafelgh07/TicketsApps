@@ -1,11 +1,11 @@
 // src/screens/tickets/TicketBookingScreen.js
 import React, { useContext } from 'react';
-import { 
-  View, 
-  Text, 
-  FlatList, 
-  StyleSheet, 
-  TouchableOpacity, 
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  TouchableOpacity,
   Image,
   RefreshControl
 } from 'react-native';
@@ -13,27 +13,33 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { BookingContext } from '../../context/BookingContext';
+import { AuthContext } from '../../context/AuthContext';
 
 const TicketBookingScreen = ({ navigation }) => {
   const { bookings, removeBooking } = useContext(BookingContext);
+  const { user } = useContext(AuthContext);
   const [refreshing, setRefreshing] = React.useState(false);
 
   const onRefresh = () => {
     setRefreshing(true);
-    // Simule un rafraîchissement (remplacez par une vraie actualisation si nécessaire)
+    // Remplace par une vraie actualisation si besoin
     setTimeout(() => setRefreshing(false), 1000);
   };
 
+  const userBookings = bookings.filter(
+    booking => booking.id_utilisateur === user?._id
+  );
+
   const renderItem = ({ item }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={styles.ticketCard}
       onPress={() => navigation.navigate('TicketDetail', { ticket: item })}
     >
       <View style={styles.ticketHeader}>
         <Text style={styles.ticketTeams}>{item.teams}</Text>
         <View style={[
-          styles.ticketTypeBadge, 
-          item.type === 'VIP' ? styles.vipBadge : styles.standardBadge
+          styles.ticketTypeBadge,
+          item.statut === 'VIP' ? styles.vipBadge : styles.standardBadge
         ]}>
           <Text style={styles.ticketTypeText}>{item.type}</Text>
         </View>
@@ -67,9 +73,9 @@ const TicketBookingScreen = ({ navigation }) => {
 
       <View style={styles.ticketFooter}>
         <Text style={styles.ticketPrice}>{item.price}€</Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.deleteButton}
-          onPress={() => removeBooking(item.id)}
+          onPress={() => removeBooking(item._id)}
         >
           <Icon name="delete" size={20} color="#ff4444" />
         </TouchableOpacity>
@@ -80,15 +86,15 @@ const TicketBookingScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <Text style={styles.headerTitle}>Mes Réservations</Text>
-      
-      {bookings.length === 0 ? (
+
+      {userBookings.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Image
             source={require('../../assets/1.png')}
             style={styles.emptyImage}
           />
           <Text style={styles.emptyText}>Aucun ticket réservé</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.ctaButton}
             onPress={() => navigation.navigate('MatchList')}
           >
@@ -97,9 +103,9 @@ const TicketBookingScreen = ({ navigation }) => {
         </View>
       ) : (
         <FlatList
-          data={bookings}
+          data={userBookings}
           renderItem={renderItem}
-          keyExtractor={item => item.id.toString()}
+          keyExtractor={item => item._id.toString()}
           contentContainerStyle={styles.listContainer}
           refreshControl={
             <RefreshControl
@@ -110,18 +116,17 @@ const TicketBookingScreen = ({ navigation }) => {
           }
         />
       )}
-  
-      {/* Barre de navigation en bas */}
+
       <View style={styles.bottomNav}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.navButton}
           onPress={() => navigation.navigate('MatchList')}
         >
           <Icon name="home" size={28} color="#333" />
           <Text style={styles.navText}>Accueil</Text>
         </TouchableOpacity>
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           style={styles.navButton}
           onPress={() => navigation.navigate('Tickets')}
         >
@@ -131,13 +136,13 @@ const TicketBookingScreen = ({ navigation }) => {
       </View>
     </View>
   );
-  
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+    paddingBottom: 70,
   },
   headerTitle: {
     fontSize: 24,
@@ -148,7 +153,7 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     paddingHorizontal: 16,
-    paddingBottom: 20,
+    paddingBottom: 80,
   },
   ticketCard: {
     backgroundColor: '#fff',
@@ -245,15 +250,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-    paddingBottom: 70, // Espace pour la navbar
-  },
-  listContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 80, // Ajustez selon vos besoins
-  },
   bottomNav: {
     position: 'absolute',
     bottom: 0,
@@ -266,8 +262,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderTopWidth: 1,
     borderTopColor: '#eee',
-    elevation: 8, // Ombre pour Android
-    shadowColor: '#000', // Ombre pour iOS
+    elevation: 8,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,

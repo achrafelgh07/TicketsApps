@@ -1,5 +1,5 @@
-import React, { createContext, useEffect, useState } from 'react';
-import { addMatchApi, getMatches } from '../services/api';
+import React, { createContext, useState, useEffect } from 'react';
+import { addMatchApi, getMatch } from '../services/api';
 
 export const MatchContext = createContext();
 
@@ -8,29 +8,25 @@ export const MatchProvider = ({ children }) => {
 
   const fetchMatches = async () => {
     try {
-      const data = await getMatches(); // Cette fonction doit déjà retourner les tickets imbriqués
-      console.log('Matchs récupérés avec tickets:', data);
+      const data = await getMatch(); // API retourne les matchs avec tickets
       setMatches(data);
     } catch (error) {
-      console.error('Erreur lors du chargement des matchs', error);
+      console.error('Erreur fetchMatches:', error);
     }
   };
 
   const addMatch = async (matchData) => {
-    try {
-      await addMatchApi(matchData); // matchData contient aussi les tickets
-      await fetchMatches(); // Recharge les données après ajout
-    } catch (error) {
-      console.error('Erreur lors de l’ajout du match', error);
-    }
+    const match = await addMatchApi(matchData);
+    await fetchMatches(); // <-- Rafraîchit la liste des matchs après ajout
+    return match;
   };
 
   useEffect(() => {
-    fetchMatches();
+    fetchMatches(); // Récupère au démarrage
   }, []);
 
   return (
-    <MatchContext.Provider value={{ matches, addMatch }}>
+    <MatchContext.Provider value={{ matches, addMatch, fetchMatches }}>
       {children}
     </MatchContext.Provider>
   );
