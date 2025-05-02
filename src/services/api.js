@@ -94,6 +94,72 @@ export const getMatch = async () => {
 };
 
 
+const réserverTicket = async (userId, ticketId) => {
+  try {
+    const res = await api.post('/reservations', {
+      userId,
+      ticketId,
+      statut: 'réservé'
+    });
+    console.log('Réservation réussie :', res.data);
+    return res.data;
+  } catch (error) {
+    console.error('Erreur lors de la réservation :', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+
+export const deleteReservation = async (reservationId) => {
+  try {
+    await api.delete(`/reservations/${reservationId}`);
+    return true; // renvoyer juste true pour dire que c'est réussi
+  } catch (error) {
+    console.error('Erreur suppression:', error);
+    throw error;
+  }
+};
+
+export const payReservation = async (reservationId) => {
+  try {
+    const response = await api.put(`/reservations/${reservationId}`, { statut: 'payé' });
+    return response.data; // on renvoie les données mises à jour
+  } catch (error) {
+    console.error('Erreur paiement:', error);
+    throw error;
+  }
+};
+
+export const getUsers = async () => {
+  try {
+    const response = await api.get('/users/get');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    throw error;
+  }
+  
+};
+
+export const registerUser = async (userData) => {
+  const res = await api.post('/users/register', userData);
+  return res.data;
+};
+
+
+
+export const updateUser = async (id, data) => {
+  const res = await api.put(`/users/${id}`, data);
+  return res.data;
+};
+
+export const deleteUser = async (id) => {
+  const res = await api.delete(`/users/${id}`);
+  return res.data;
+};
+
+
+
 
 
 

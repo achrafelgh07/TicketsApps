@@ -1,142 +1,152 @@
-// src/screens/tickets/TicketBookingScreen.js
-import React, { useContext } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  RefreshControl
-} from 'react-native';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
-import Icon from 'react-native-vector-icons/MaterialIcons';
-import { BookingContext } from '../../context/BookingContext';
+import React, { useEffect, useState, useContext } from 'react';
+import { View, Text, FlatList, ActivityIndicator, StyleSheet } from 'react-native';
 import { AuthContext } from '../../context/AuthContext';
+import api from '../../services/api';
+import { TouchableOpacity } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialIcons'; // ou autre selon ta lib d'icônes
+import { deleteReservation, payReservation } from '../../services/api';
+import { useNavigation } from '@react-navigation/native';  // Importation du hook
 
-const TicketBookingScreen = ({ navigation }) => {
-  const { bookings, removeBooking } = useContext(BookingContext);
-  const { user } = useContext(AuthContext);
-  const [refreshing, setRefreshing] = React.useState(false);
+  
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    // Remplace par une vraie actualisation si besoin
-    setTimeout(() => setRefreshing(false), 1000);
+const TicketBookingScreen = () => {
+  const { user } = useContext(AuthContext); // Assure-toi que le user contient _id
+  const [reservations, setReservations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const navigation = useNavigation(); 
+
+  const fetchUserReservations = async () => {
+    try {
+      const response = await api.get('/reservations'); // Utilise ton instance Axios avec token
+      const allReservations = response.data;
+
+      // Filtrer les réservations par user connecté
+      const filtered = allReservations.filter(
+        (r) => r.id_utilisateur?._id === user._id && r.statut === 'réservé'
+      );
+
+      setReservations(filtered);
+    } catch (error) {
+      console.error('Erreur fetch reservations:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const userBookings = bookings.filter(
-    booking => booking.id_utilisateur === user?._id
-  );
+  useEffect(() => {
+    if (user?._id) {
+      fetchUserReservations();
+    }
+  }, [user]);
 
-  const renderItem = ({ item }) => (
-    <TouchableOpacity
-      style={styles.ticketCard}
-      onPress={() => navigation.navigate('TicketDetail', { ticket: item })}
-    >
+  const renderReservation = ({ item }) => (
+    <View style={styles.card}>
       <View style={styles.ticketHeader}>
-        <Text style={styles.ticketTeams}>{item.teams}</Text>
-        <View style={[
-          styles.ticketTypeBadge,
-          item.statut === 'VIP' ? styles.vipBadge : styles.standardBadge
-        ]}>
-          <Text style={styles.ticketTypeText}>{item.type}</Text>
-        </View>
-      </View>
-
-      <View style={styles.ticketInfoRow}>
-        <Icon name="location-on" size={18} color="#666" />
-        <Text style={styles.ticketInfoText}>{item.location}</Text>
-      </View>
-
-      <View style={styles.ticketInfoRow}>
-        <Icon name="calendar-today" size={18} color="#666" />
-        <Text style={styles.ticketInfoText}>
-          {format(new Date(item.date), "eeee d MMMM yyyy", { locale: fr })}
+        <Text style={styles.ticketTeams}>
+          {item.id_ticket?.id_match?.équipe_1} vs {item.id_ticket?.id_match?.équipe_2}
         </Text>
-      </View>
-
-      <View style={styles.ticketInfoRow}>
-        <Icon name="access-time" size={18} color="#666" />
-        <Text style={styles.ticketInfoText}>
-          {format(new Date(item.date), "HH:mm", { locale: fr })}
-        </Text>
-      </View>
-
-      {item.seat && (
-        <View style={styles.ticketInfoRow}>
-          <Icon name="event-seat" size={18} color="#666" />
-          <Text style={styles.ticketInfoText}>Siège: {item.seat}</Text>
-        </View>
-      )}
-
-      <View style={styles.ticketFooter}>
-        <Text style={styles.ticketPrice}>{item.price}€</Text>
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={() => removeBooking(item._id)}
+        <View
+          style={[
+            styles.ticketTypeBadge,
+            item.id_ticket?.catégorie === 'VIP' ? styles.vipBadge : styles.standardBadge,
+          ]}
         >
-          <Icon name="delete" size={20} color="#ff4444" />
-        </TouchableOpacity>
+          <Text style={styles.ticketTypeText}>{item.id_ticket?.catégorie}</Text>
+        </View>
       </View>
-    </TouchableOpacity>
+  
+      <View style={styles.ticketInfoRow}>
+        <Icon name="attach-money" size={18} color="#555" />
+        <Text style={styles.ticketInfoText}>Prix: {item.id_ticket?.prix} MAD</Text>
+      </View>
+  
+      <View style={styles.ticketInfoRow}>
+        <Icon name="info" size={18} color="#555" />
+        <Text style={styles.ticketInfoText}>Statut: {item.statut}</Text>
+      </View>
+  
+      <View style={styles.ticketInfoRow}>
+        <Icon name="event" size={18} color="#555" />
+        <Text style={styles.ticketInfoText}>
+          Réservé le: {new Date(item.createdAt).toLocaleDateString()}
+        </Text>
+      </View>
+      <View style={styles.ticketFooter}>
+  
+  <TouchableOpacity
+  onPress={async () => {
+    try {
+      await payReservation(item._id);
+      fetchUserReservations(); // Recharge les réservations après suppression
+      <Text style={styles.buttonText}>
+      {item.statut === 'payé' ? 'Payé' : 'Payer'}
+    </Text>
+      
+    } catch (error) {
+      console.error('Erreur lors de la payment :', error);
+    }
+  }}
+  style={[styles.actionButton, styles.payButton]}
+  disabled={item.statut === 'payé'}
+>
+  <Text style={styles.buttonText}>Payer</Text>
+</TouchableOpacity>
+
+  <TouchableOpacity
+  onPress={async () => {
+    try {
+      await deleteReservation(item._id);
+      fetchUserReservations(); // Recharge les réservations après suppression
+    } catch (error) {
+      console.error('Erreur lors de la suppression :', error);
+    }
+  }}
+  style={[styles.actionButton, styles.deleteButton]}
+>
+  <Text style={styles.buttonText}>Supprimer</Text>
+</TouchableOpacity>
+</View>
+
+    </View>
   );
+  
+
+  if (loading) return <ActivityIndicator size="large" color="#007bff" style={{ marginTop: 20 }} />;
 
   return (
     <View style={styles.container}>
-      <Text style={styles.headerTitle}>Mes Réservations</Text>
-
-      {userBookings.length === 0 ? (
+      <Text style={styles.header}>Mes Réservations</Text>
+      {loading ? (
+        <ActivityIndicator size="large" color="#007bff" style={{ marginTop: 20 }} />
+      ) : reservations.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Image
-            source={require('../../assets/1.png')}
-            style={styles.emptyImage}
-          />
-          <Text style={styles.emptyText}>Aucun ticket réservé</Text>
-          <TouchableOpacity
-            style={styles.ctaButton}
-            onPress={() => navigation.navigate('MatchList')}
-          >
-            <Text style={styles.ctaButtonText}>Voir les matches disponibles</Text>
-          </TouchableOpacity>
+          <Text style={styles.emptyText}>Aucune réservation trouvée.</Text>
         </View>
       ) : (
         <FlatList
-          data={userBookings}
-          renderItem={renderItem}
-          keyExtractor={item => item._id.toString()}
           contentContainerStyle={styles.listContainer}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={['#007AFF']}
-            />
-          }
+          data={reservations}
+          keyExtractor={(item) => item._id}
+          renderItem={renderReservation}
         />
       )}
-
+  
       <View style={styles.bottomNav}>
-        <TouchableOpacity
-          style={styles.navButton}
-          onPress={() => navigation.navigate('MatchList')}
-        >
-          <Icon name="home" size={28} color="#333" />
-          <Text style={styles.navText}>Accueil</Text>
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('MatchList')}>
+          <Icon name="home" size={28} color="#007AFF" />
+          <Text style={[styles.navText, { color: '#007AFF' }]}>Accueil</Text>
         </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.navButton}
-          onPress={() => navigation.navigate('Tickets')}
-        >
-          <Icon name="confirmation-number" size={28} color="#007AFF" />
-          <Text style={[styles.navText, { color: '#007AFF' }]}>Mes Tickets</Text>
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Tickets')}>
+          <Icon name="confirmation-number" size={28} color="#333" />
+          <Text style={styles.navText}>Mes Tickets</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
+  
 };
+
+export default TicketBookingScreen;
 
 const styles = StyleSheet.create({
   container: {
@@ -144,7 +154,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
     paddingBottom: 70,
   },
-  headerTitle: {
+  header: {
     fontSize: 24,
     fontWeight: 'bold',
     textAlign: 'center',
@@ -155,7 +165,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 80,
   },
-  ticketCard: {
+  card: {
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: 16,
@@ -277,6 +287,26 @@ const styles = StyleSheet.create({
     marginTop: 4,
     color: '#333',
   },
-});
+  actionButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    marginHorizontal: 4,
+  },
+  
+  payButton: {
+    backgroundColor: '#28a745',
+  },
+  
+  deleteButton: {
+    backgroundColor: '#dc3545',
+  },
+  
+  buttonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  
 
-export default TicketBookingScreen;
+});

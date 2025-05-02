@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react'; 
 import { 
   View, 
   FlatList, 
@@ -15,6 +15,7 @@ import MatchCard from '../../components/MatchCard';
 import { getMatches } from '../../services/api';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import ProfileScreen from '../../components/ProfileScreen';
 
 const MatchListScreen = ({ navigation }) => {
   const [matches, setMatches] = useState([]);
@@ -23,28 +24,31 @@ const MatchListScreen = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(null);
-
-  const filterByCategory = async (category) => {
-    try {
-      setLoading(true);
-      setSelectedCategory(category);
-      const response = await fetch(`http://10.0.2.2:5000/api/matches/with-tickets/${category}`);
-      const data = await response.json();
-      setMatches(data);
-      setFilteredMatches(data);
-    } catch (error) {
-      console.error('Erreur de filtrage :', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [profileVisible, setProfileVisible] = useState(false); // Ajouté pour ouvrir la modale
   
+
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const storedUser = await AsyncStorage.getItem('user');
+        if (storedUser) {
+          setUser(JSON.parse(storedUser));
+        }
+      } catch (err) {
+        console.error('Erreur en récupérant l’utilisateur :', err);
+      }
+    };
+
+    fetchUser();
+    fetchMatches();
+  }, []);
 
   const fetchMatches = async () => {
     try {
       setLoading(true);
       const data = await getMatches();
-      console.log('Données reçues du backend :', data);
       setMatches(data);
       setFilteredMatches(data);
     } catch (error) {
@@ -65,18 +69,14 @@ const MatchListScreen = ({ navigation }) => {
     if (query === '') {
       setFilteredMatches(matches);
     } else {
-      const filtered = matches.filter(match => 
-        match.team1.toLowerCase().includes(query.toLowerCase()) ||
-        match.team2.toLowerCase().includes(query.toLowerCase()) ||
-        match.venue.toLowerCase().includes(query.toLowerCase())
+      const filtered = matches.filter(Match => 
+        Match.équipe_1.toLowerCase().includes(query.toLowerCase()) ||
+        Match.équipe_2.toLowerCase().includes(query.toLowerCase()) ||
+        Match.lieu.toLowerCase().includes(query.toLowerCase())
       );
       setFilteredMatches(filtered);
     }
   };
-
-  useEffect(() => {
-    fetchMatches();
-  }, []);
 
   if (loading && !refreshing) {
     return (
@@ -103,7 +103,9 @@ const MatchListScreen = ({ navigation }) => {
         />
         <TouchableOpacity 
           style={styles.profileButton}
-          onPress={() => navigation.navigate('Profile')}
+          
+          onPress={() => {console.log('Profile button pressed');
+          setProfileVisible(true)}} // Lors du clic, modale devient visible
         >
           <Image
             source={{ uri: 'https://randomuser.me/api/portraits/men/1.jpg' }}
@@ -111,33 +113,32 @@ const MatchListScreen = ({ navigation }) => {
           />
         </TouchableOpacity>
       </View>
-      {/*filter*/}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginVertical: 10 }}>
-      <TouchableOpacity 
-    onPress={() => {
-      setSelectedCategory(null);
-      fetchMatches();
-    }}
-    style={[styles.filterButton, !selectedCategory && styles.selectedFilter]}
-  >
-    <Text style={styles.filterText}>Tous</Text>
-  </TouchableOpacity>
-  <TouchableOpacity 
-    onPress={() => filterByCategory('VIP')}
-    style={[styles.filterButton, selectedCategory === 'VIP' && styles.selectedFilter]}
-  >
-    <Text style={styles.filterText}>VIP</Text>
-  </TouchableOpacity>
-  <TouchableOpacity 
-    onPress={() => filterByCategory('normal')}
-    style={[styles.filterButton, selectedCategory === 'normal' && styles.selectedFilter]}
-  >
-    <Text style={styles.filterText}>Normale</Text>
-  </TouchableOpacity>
- 
-</View>
 
-  
+      {/* Filtres */}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginVertical: 10 }}>
+        <TouchableOpacity 
+          onPress={() => {
+            setSelectedCategory(null);
+            fetchMatches();
+          }}
+          style={[styles.filterButton, !selectedCategory && styles.selectedFilter]}
+        >
+          <Text style={styles.filterText}>Tous</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          onPress={() => filterByCategory('VIP')}
+          style={[styles.filterButton, selectedCategory === 'VIP' && styles.selectedFilter]}
+        >
+          <Text style={styles.filterText}>VIP</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          onPress={() => filterByCategory('normal')}
+          style={[styles.filterButton, selectedCategory === 'normal' && styles.selectedFilter]}
+        >
+          <Text style={styles.filterText}>Normale</Text>
+        </TouchableOpacity>
+      </View>
+
       {/* Liste des matches */}
       <FlatList
         data={filteredMatches}
@@ -146,9 +147,8 @@ const MatchListScreen = ({ navigation }) => {
             match={item}
             onPress={() => navigation.navigate('MatchDetail', { 
               matchId: item._id, 
-              match: item  // on passe tout l'objet
+              match: item  
             })}
-            
           />
         )}
         keyExtractor={item => item._id.toString()}
@@ -167,7 +167,17 @@ const MatchListScreen = ({ navigation }) => {
           </Text>
         }
       />
-  
+
+      {/* Modal du profil */}
+      {profileVisible && (
+        <ProfileScreen
+          visible={profileVisible}
+          
+          onClose={() => setProfileVisible(false)} // Ferme la modale
+          user={user}
+        />
+      )}
+
       {/* Barre de navigation en bas */}
       <View style={styles.bottomNav}>
         <TouchableOpacity 
@@ -188,7 +198,6 @@ const MatchListScreen = ({ navigation }) => {
       </View>
     </SafeAreaView>
   );
-  
 };
 
 

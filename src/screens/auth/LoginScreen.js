@@ -2,14 +2,15 @@
 import React, { useState, useContext } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, ActivityIndicator } from 'react-native';
 import { AuthContext } from '../../context/AuthContext';
+import { BookingContext } from '../../context/BookingContext';
 
 
 const LoginScreen = ({ navigation }) => {
-  const [email, setEmail] = useState('test@example.com'); // Valeur par défaut pour tester
-  const [password, setPassword] = useState('123456'); // Valeur par défaut pour tester
+  const [email, setEmail] = useState('admin'); // Valeur par défaut pour tester
+  const [password, setPassword] = useState('admin'); // Valeur par défaut pour tester
   const [loading, setLoading] = useState(false); // Ajouté
   const { login } = useContext(AuthContext);
-  
+  const { login: loginBooking } = useContext(BookingContext);
 
   const handleLogin = async () => {
     setLoading(true);
@@ -18,7 +19,23 @@ const LoginScreen = ({ navigation }) => {
       if (!result.success) {
         alert(result.error);
       } else {
-        navigation.navigate('MatchList'); // Redirection si succès
+        const user = result.user;
+        loginBooking(user);
+  
+        // Redirection selon le type d'utilisateur
+        switch (user.type_utilisateur) {
+          case 'fan':
+            navigation.navigate('MatchList');
+            break;
+          case 'club':
+            navigation.navigate('ClubHome');
+            break;
+          case 'admin':
+            navigation.navigate('admindash'); 
+            break;
+          default:
+            alert("Type d'utilisateur inconnu");
+        }
       }
     } catch (error) {
       alert(error.message);
@@ -26,7 +43,7 @@ const LoginScreen = ({ navigation }) => {
       setLoading(false);
     }
   };
-
+  
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Connexion</Text>

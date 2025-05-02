@@ -1,3 +1,4 @@
+//src\context\AuthContext.js
 import React, { createContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../services/api';
@@ -15,7 +16,8 @@ export const AuthProvider = ({ children }) => {
       await AsyncStorage.setItem('token', token);
       const userRes = await api.get('/users'); // Route protégée pour récupérer les infos
       setUser(userRes.data);
-      return { success: true };
+      await AsyncStorage.setItem('user', JSON.stringify(userRes.data));
+      return { success: true, user: userRes.data };
     } catch (err) {
       return { success: false, error: err.response?.data?.message || 'Erreur de connexion' };
     }

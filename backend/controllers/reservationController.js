@@ -45,10 +45,17 @@ exports.createReservation = async (req, res) => {
 // Fonction pour récupérer toutes les réservations
 exports.getAllReservations = async (req, res) => {
   try {
-    const reservations = await Reservation.find();
-    res.status(200).json(reservations);
-  } catch (error) {
-    res.status(500).json({ message: 'Erreur lors de la récupération des réservations', error: error.message });
+    const reservations = await Reservation.find()
+      .populate({
+        path: 'id_ticket',
+        populate: {
+          path: 'id_match'
+        }
+      })
+      .populate('id_utilisateur');
+    res.json(reservations);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };
 
@@ -102,5 +109,41 @@ exports.updateReservation = async (req, res) => {
           status: 'fail',
           message: err.message
       });
+  }
+};
+
+// Supprimer une réservation
+exports.deleteReservation = async (req, res) => {
+  try {
+    const deleted = await Reservation.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ message: 'Réservation non trouvée' });
+
+    res.json({ message: 'Réservation supprimée avec succès' });
+  } catch (error) {
+    console.error('Erreur suppression:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+};
+
+// Mettre à jour le statut d'une réservation (ex: payé)
+exports.updateReservationStatus = async (req, res) => {
+  try {
+    const { statut } = req.body;
+    if (!statut) {
+      return res.status(400).json({ message: 'Statut requis' });
+    }
+
+    const updated = await Reservation.findByIdAndUpdate(
+      req.params.id,
+      { statut },
+      { new: true }
+    );
+
+    if (!updated) return res.status(404).json({ message: 'Réservation non trouvée' });
+
+    res.json(updated);
+  } catch (error) {
+    console.error('Erreur mise à jour:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
   }
 };

@@ -29,7 +29,11 @@ exports.register = async (req, res) => {
 
     await newUser.save();
 
-    res.status(201).json({ message: 'Utilisateur créé avec succès.' });
+    res.status(201).json({
+      message: 'Utilisateur créé avec succès',
+      user: newUser
+    });
+    
   } catch (error) {
     console.error('Erreur lors de l\'inscription :', error);
     res.status(500).json({ message: 'Erreur serveur.' });
@@ -77,4 +81,41 @@ exports.login = async (req, res) => {
 
 exports.get = (req, res) => {
   res.json(req.user);
+};
+
+exports.getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find({ type_utilisateur: 'fan' }).select('-mot_de_passe');
+    res.json(users);
+  } catch (error) {
+    console.error('Erreur lors de la récupération des utilisateurs :', error);
+    res.status(500).json({ message: 'Erreur serveur.' });
+  }
+};
+
+
+
+
+// PUT - Modifier un utilisateur
+exports.updateUser = async (req, res) => {
+  try {
+    const updated = await User.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+    res.json(updated);
+  } catch (error) {
+    res.status(400).json({ message: 'Erreur lors de la mise à jour' });
+  }
+};
+
+// DELETE - Supprimer un utilisateur
+exports.deleteUser = async (req, res) => {
+  try {
+    await User.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Utilisateur supprimé' });
+  } catch (error) {
+    res.status(400).json({ message: 'Erreur lors de la suppression' });
+  }
 };

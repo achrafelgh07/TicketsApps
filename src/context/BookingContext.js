@@ -1,7 +1,8 @@
+//src\context\BookingContext.js
 import React, { createContext, useState } from 'react';
 
 export const BookingContext = createContext({
-  user: null,
+  user: [],
   bookings: [],
   login: () => {},
   logout: () => {},
