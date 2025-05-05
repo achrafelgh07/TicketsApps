@@ -1,0 +1,21 @@
+{
+  "migIndex": 1,
+  "data": [
+    {
+      "path": "assets/fonts/Gafien-Italic.otf",
+      "sha1": "e46954895f0f0b01e62b686a7acf8870ee606124"
+    },
+    {
+      "path": "assets/fonts/Gafien-Italic.ttf",
+      "sha1": "bfaf89f369b74d9ed4983890b54cc504110354d4"
+    },
+    {
+      "path": "assets/fonts/Gafien.otf",
+      "sha1": "13bb0565598fbfcfa05bfe9d71f8aabc0397b040"
+    },
+    {
+      "path": "assets/fonts/Gafien.ttf",
+      "sha1": "2fc7169c5b7edbef25609e8cb7f3359adec84f5c"
+    }
+  ]
+}

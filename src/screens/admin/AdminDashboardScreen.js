@@ -2,6 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import UserManagementScreen from './UserManagementScreen';
 import ClubManagementScreen from './ClubManagementScreen';
+import Icon from 'react-native-vector-icons/Ionicons';
 import SalesScreen from './SalesScreen';
 import SettingsScreen from './SettingsScreen'; // à créer
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
@@ -31,7 +32,8 @@ const AdminDashboardScreen = () => {
         component={ClubManagementScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="people" color={color} size={size} />
+            <Icon name="football-outline" size={30} color="#000" />
+            
           ),
         }}
       />

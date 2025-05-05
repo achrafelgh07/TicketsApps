@@ -35,5 +35,5 @@ app.use('/api/matches', matchRoutes);
 app.use('/api/tickets', ticketRoutes);
 app.use('/api/reservations', reservationRoutes);
 app.use('/api/users', userRoutes); // Ajout de la route des utilisateurs
-
+app.use('/api',require('./routes/stripe'));
 module.exports = app;

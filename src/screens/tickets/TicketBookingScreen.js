@@ -6,14 +6,17 @@ import { TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons'; // ou autre selon ta lib d'icônes
 import { deleteReservation, payReservation } from '../../services/api';
 import { useNavigation } from '@react-navigation/native';  // Importation du hook
+import { useStripe } from '@stripe/stripe-react-native';
 
-  
+
 
 const TicketBookingScreen = () => {
   const { user } = useContext(AuthContext); // Assure-toi que le user contient _id
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation(); 
+  
+const { initPaymentSheet, presentPaymentSheet } = useStripe();
 
   const fetchUserReservations = async () => {
     try {
@@ -38,6 +41,40 @@ const TicketBookingScreen = () => {
       fetchUserReservations();
     }
   }, [user]);
+  const handlePayment = async (reservation) => {
+    try {
+      // Appel backend : crée un paymentIntent
+      const response = await fetch('http://10.0.2.2:5000/api/create-payment-intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: reservation.id_ticket?.prix * 100 }), // montant en centimes
+      });
+  
+      const { clientSecret } = await response.json();
+  
+      // Init PaymentSheet
+      const initResult = await initPaymentSheet({
+        paymentIntentClientSecret: clientSecret,
+        merchantDisplayName: "MyTicketApp", // requis !
+      });
+      if (initResult.error) return alert(initResult.error.message);
+  
+      // Affiche la sheet
+      const paymentResult = await presentPaymentSheet();
+      if (paymentResult.error) {
+        alert(paymentResult.error.message);
+      } else {
+        // Paiement OK → marquer comme "payé"
+        await payReservation(reservation._id);
+        fetchUserReservations();
+        alert('Paiement réussi !');
+      }
+    } catch (error) {
+      console.error('Erreur de paiement :', error);
+      alert('Erreur lors du paiement');
+    }
+  };
+  
 
   const renderReservation = ({ item }) => (
     <View style={styles.card}>
@@ -73,24 +110,17 @@ const TicketBookingScreen = () => {
       </View>
       <View style={styles.ticketFooter}>
   
-  <TouchableOpacity
-  onPress={async () => {
-    try {
-      await payReservation(item._id);
-      fetchUserReservations(); // Recharge les réservations après suppression
-      <Text style={styles.buttonText}>
-      {item.statut === 'payé' ? 'Payé' : 'Payer'}
-    </Text>
-      
-    } catch (error) {
-      console.error('Erreur lors de la payment :', error);
-    }
-  }}
+      <TouchableOpacity
+  onPress={() => handlePayment(item)}
   style={[styles.actionButton, styles.payButton]}
   disabled={item.statut === 'payé'}
 >
-  <Text style={styles.buttonText}>Payer</Text>
+  <Text style={styles.buttonText}>
+    {item.statut === 'payé' ? 'Payé' : 'Payer'}
+  </Text>
 </TouchableOpacity>
+
+
 
   <TouchableOpacity
   onPress={async () => {

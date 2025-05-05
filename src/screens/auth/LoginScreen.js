@@ -78,23 +78,34 @@ const LoginScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 20 },
-  title: { fontSize: 24, marginBottom: 20, textAlign: 'center' },
-  input: { 
-    height: 50, 
-    borderWidth: 1, 
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: 20,
+  },
+  title: {
+    fontFamily: 'Coolvetica-rg',
+    fontSize: 28,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  input: {
+    fontFamily: 'Coolvetica-rg',
+    height: 50,
+    borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 5,
-    marginBottom: 15, 
+    marginBottom: 15,
     paddingHorizontal: 10,
-    fontSize: 16
+    fontSize: 16,
   },
-  link: { 
-    color: 'blue', 
-    textAlign: 'center', 
+  link: {
+    fontFamily: 'Coolvetica-rg',
+    color: 'blue',
+    textAlign: 'center',
     marginTop: 15,
-    fontSize: 16
+    fontSize: 16,
   },
-});
+})
 
 export default LoginScreen;
