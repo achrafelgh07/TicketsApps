@@ -20,8 +20,11 @@ import SettingsScreen from './src/screens/admin/SettingsScreen';
 import UserManagementScreen from './src/screens/admin/UserManagementScreen';
 import ProfileScreen from './src/components/ProfileScreen'; // ou le bon chemin
 import PaymentScreen from './src/screens/PaymentScreen'
-
+import { Provider as PaperProvider } from 'react-native-paper';
 import { StripeProvider } from '@stripe/stripe-react-native';
+import FlashMessage from 'react-native-flash-message';
+import { AlertNotificationRoot } from 'react-native-alert-notification';
+
 
 
 const Stack = createStackNavigator();
@@ -29,6 +32,8 @@ const Stack = createStackNavigator();
 export default function App() {
   return (
     <AuthProvider>
+      <AlertNotificationRoot>
+      <PaperProvider>
       <BookingProvider>
       <MatchProvider>
         <StripeProvider publishableKey="pk_test_51RLUWJCWsIDMw35kcAOy0xt37bifAum8bHhcVOCsHOjgQ8rx7lqiJgyRYrW6hc0S6GHqb2wgCSTlJkgof4S4pFtb005SbqY41h">
@@ -54,6 +59,8 @@ export default function App() {
     </StripeProvider>
   </MatchProvider>
   </BookingProvider>
+  </PaperProvider>
+  </AlertNotificationRoot>
     </AuthProvider>
   );
 }

@@ -1,115 +1,106 @@
+// src/screens/auth/RegisterScreen.js
 import React, { useState, useContext } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  Image,
-  KeyboardAvoidingView,
-  ScrollView,
-  Platform,
-  Animated
-} from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { View, StyleSheet, KeyboardAvoidingView, Platform, Image, ScrollView } from 'react-native';
+import { Text, TextInput, Button } from 'react-native-paper';
 import { AuthContext } from '../../context/AuthContext';
+import { ALERT_TYPE, Dialog, Toast } from 'react-native-alert-notification';
+
 
 const RegisterScreen = ({ navigation }) => {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const scale = useState(new Animated.Value(1))[0];
+  const [loading, setLoading] = useState(false);
 
   const { register } = useContext(AuthContext);
 
   const handleRegister = async () => {
-    const result = await register(fullName, email, password);
-    
-      alert('Inscription reessi' )
-    
-      navigation.navigate('Login'); // Ou autre écran après inscription
-    
-  };
-
-  const onPressIn = () => {
-    Animated.spring(scale, {
-      toValue: 0.96,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const onPressOut = () => {
-    Animated.spring(scale, {
-      toValue: 1,
-      friction: 3,
-      useNativeDriver: true,
-    }).start();
+    setLoading(true);
+    try {
+      const result = await register({
+        nom: fullName,
+        email: email,
+        mot_de_passe: password,
+        type_utilisateur: 'user' // Adaptez selon votre logique
+      });
+  
+      if (!result.success) {
+        Toast.show({
+          type: ALERT_TYPE.SUCCESS,
+          title: 'Succès',
+          textBody: 'Inscription réussie ! Vous pouvez maintenant vous connecter.',
+        });
+        navigation.navigate('Login');
+      }
+    } catch (error) {
+      Dialog.show({
+        type: ALERT_TYPE.DANGER,
+        title: 'Erreur serveur',
+        textBody: error.message || 'Une erreur inattendue est survenue.',
+        button: 'Fermer',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: '#fff' }}
-      behavior={Platform.OS === 'ios' ? 'padding' : null}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={{ flex: 1 }}
     >
       <ScrollView contentContainerStyle={styles.container}>
-        <Image
-          source={require('../../assets/2.png')}
-          style={styles.logo}
-        />
+        <Image source={require('../../assets/2.png')} style={styles.logo} />
+
         <Text style={styles.title}>Créer un compte</Text>
 
         <TextInput
-          placeholder="Nom complet"
-          placeholderTextColor="#999"
+          label="Nom complet"
           value={fullName}
           onChangeText={setFullName}
+          mode="outlined"
+          required
           style={styles.input}
         />
 
         <TextInput
-          placeholder="Adresse e-mail"
-          placeholderTextColor="#999"
+          label="Adresse e-mail"
           value={email}
           onChangeText={setEmail}
+          mode="outlined"
           style={styles.input}
           keyboardType="email-address"
           autoCapitalize="none"
         />
 
         <TextInput
-          placeholder="Mot de passe"
-          placeholderTextColor="#999"
+          label="Mot de passe"
           value={password}
           onChangeText={setPassword}
-          style={styles.input}
+          mode="outlined"
           secureTextEntry
+          style={styles.input}
         />
 
-        <Animated.View style={{ transform: [{ scale }] }}>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPressIn={onPressIn}
-            onPressOut={onPressOut}
-            onPress={handleRegister}
-          >
-            <LinearGradient
-              colors={['#007AFF', '#00B0FF']}
-              style={styles.button}
-            >
-              <Text style={styles.buttonText}>S'inscrire</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </Animated.View>
-
-        <TouchableOpacity
-          onPress={() => navigation.navigate('Login')}
-          style={{ marginTop: 20 }}
+        <Button
+          mode="contained"
+          onPress={handleRegister}
+          loading={loading}
+          disabled={loading}
+          style={styles.button}
+          contentStyle={{ paddingVertical: 8 }}
         >
-          <Text style={styles.link}>
-            Déjà un compte ? <Text style={styles.linkBold}>Se connecter</Text>
-          </Text>
-        </TouchableOpacity>
+          S'inscrire
+        </Button>
+
+        <Button
+          onPress={() => navigation.navigate('Login')}
+          style={styles.link}
+          labelStyle={{ fontSize: 14 }}
+          uppercase={false}
+        >
+          Déjà un compte ? Se connecter
+        </Button>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -120,6 +111,7 @@ const styles = StyleSheet.create({
     padding: 24,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#fff',
   },
   logo: {
     width: 90,
@@ -129,44 +121,21 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 26,
-    fontWeight: '700',
+    fontWeight: 'bold',
     marginBottom: 30,
     color: '#1a1a1a',
   },
   input: {
     width: '100%',
-    backgroundColor: '#f0f4f8',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 12,
-    fontSize: 16,
     marginBottom: 15,
-    color: '#333',
   },
   button: {
-    width: 200,
-    paddingVertical: 14,
-    borderRadius: 25,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#007AFF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 8,
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 16,
+    width: '100%',
+    marginTop: 10,
+    borderRadius: 8,
   },
   link: {
-    fontSize: 14,
-    color: '#666',
-  },
-  linkBold: {
-    fontWeight: 'bold',
-    color: '#007AFF',
+    marginTop: 15,
   },
 });
 
